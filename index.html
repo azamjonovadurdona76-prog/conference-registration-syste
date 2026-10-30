@@ -1,73 +1,193 @@
-function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
-      .evaluate()
-      .setTitle('Konferensiya Qatnashchilari va Ro\'yxatdan O\'tish')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Konferensiya Ekotizimi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans pb-12">
 
-// Qatnashchini Google Sheets'ga qo'shish
-function addParticipant(formData) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("Qatnashchilar");
-    
-    // Agar "Qatnashchilar" varag'i topilmasa, uni avtomatik yaratib sarlavha qo'yamiz
-    if (!sheet) {
-      sheet = ss.insertSheet("Qatnashchilar");
-      sheet.appendRow(["Vaqt", "F.I.Sh.", "O'quv kursi / Guruh", "Ma'ruza mavzusi", "Yo'nalishi", "E-pochta", "Telefon raqami"]);
-    }
-    
-    var timestamp = new Date();
-    sheet.appendRow([
-      timestamp,
-      sanitizeInput(formData.fullname),
-      sanitizeInput(formData.group),
-      sanitizeInput(formData.topic),
-      sanitizeInput(formData.direction),
-      sanitizeInput(formData.email),
-      sanitizeInput(formData.phone)
-    ]);
-    
-    return { success: true, message: "Muvaffaqiyatli ro'yxatdan o'tdingiz!" };
-  } catch (error) {
-    return { success: false, message: "Xatolik yuz berdi: " + error.message };
-  }
-}
+    <!-- Sarlavha -->
+    <header class="py-8 text-center bg-slate-800/60 border-b border-slate-700 backdrop-blur-md sticky top-0 z-50 shadow-lg">
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-teal-300 to-emerald-400">
+            ILMIY KONFERENSIYA EKOTIZIMI
+        </h1>
+        <p class="text-slate-400 mt-2 text-sm md:text-base">Ro'yxatdan o'tish va qatnashchilarni real vaqtda kuzatish paneli</p>
+    </header>
 
-// Google Sheets'dan ro'yxatni o'qib kelish
-function getParticipants() {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("Qatnashchilar");
-    
-    if (!sheet) return [];
-    
-    var data = sheet.getDataRange().getValues();
-    if (data.length <= 1) return [];
-    
-    var participants = [];
-    for (var i = 1; i < data.length; i++) {
-      var row = data[i];
-      if (row[1]) {
-        participants.push({
-          time: row[0] ? new Date(row[0]).toLocaleDateString() : "",
-          fullname: sanitizeInput(row[1]),
-          group: sanitizeInput(row[2]),
-          topic: sanitizeInput(row[3]),
-          direction: sanitizeInput(row[4]),
-          email: sanitizeInput(row[5]),
-          phone: sanitizeInput(row[6])
-        });
-      }
-    }
-    return participants.reverse();
-  } catch (error) {
-    return [];
-  }
-}
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- CHAP QISM: Ro'yxatdan o'tish Formasi -->
+        <section class="lg:col-span-1 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl h-fit sticky top-28">
+            <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                📝 Konferensiyaga Ro'yxatdan O'tish
+            </h2>
+            
+            <form id="regForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">F.I.Sh. (Familiya Ism Sharif):</label>
+                    <input type="text" id="fullname" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
 
-function sanitizeInput(str) {
-  if (!str) return "";
-  return String(str).replace(/`/g, "'").replace(/‘/g, "'").replace(/’/g, "'").trim();
-}
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">O'quv kursi / Guruh:</label>
+                    <input type="text" id="group" required placeholder="Masalan: SE-21" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Ma'ruza mavzusi:</label>
+                    <input type="text" id="topic" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Yo'nalishi:</label>
+                    <select id="direction" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+                        <option value="Dasturiy injiniring">Dasturiy injiniring</option>
+                        <option value="Axbarot xavsizligi">Axbarot xavsizligi</option>
+                        <option value="Suniy intelekt">Suniy intelekt</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">E-pochta:</label>
+                    <input type="email" id="email" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Telefon raqami:</label>
+                    <input type="tel" id="phone" required placeholder="+998 90 123 45 67" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition shadow-lg shadow-blue-600/30">
+                    Ro'yxatdan o'tish
+                </button>
+            </form>
+            <div id="formStatus" class="mt-3 text-center text-xs font-medium"></div>
+        </section>
+
+        <!-- O'NG QISM: Qatnashchilar Ro'yxati va Kartochkalar -->
+        <section class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-200">Ro'yxatdan o'tganlar: <span id="count" class="text-blue-400 font-extrabold">0</span> ta</h2>
+                <button onclick="loadParticipants()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                    🔄 Yangilash
+                </button>
+            </div>
+
+            <div id="participants-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-full text-center py-12 text-slate-400">Ma'lumotlar yuklanmoqda...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        window.onload = function() {
+            loadParticipants();
+        };
+
+        // Formadan ma'lumot yuborish
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('formStatus');
+
+            const formData = {
+                fullname: document.getElementById('fullname').value,
+                group: document.getElementById('group').value,
+                topic: document.getElementById('topic').value,
+                direction: document.getElementById('direction').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
+
+            btn.disabled = true;
+            btn.innerText = "Yuborilmoqda...";
+            status.innerText = "";
+
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    btn.disabled = false;
+                    btn.innerText = "Ro'yxatdan o'tish";
+                    if(res.success) {
+                        status.innerHTML = `<span class="text-emerald-400">${res.message}</span>`;
+                        document.getElementById('regForm').reset();
+                        loadParticipants(); // Ro'yxatni yangilash
+                    } else {
+                        status.innerHTML = `<span class="text-red-400">${res.message}</span>`;
+                    }
+                })
+                .addParticipant(formData);
+        }
+
+        // Bazadan ma'lumotlarni o'qib chiqarish
+        function loadParticipants() {
+            google.script.run.withSuccessHandler(renderParticipants).getParticipants();
+        }
+
+        function renderParticipants(data) {
+            const grid = document.getElementById('participants-grid');
+            const countSpan = document.getElementById('count');
+            
+            grid.innerHTML = '';
+            countSpan.innerText = data.length;
+
+            if (!data || data.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 bg-slate-800/40 rounded-2xl border border-slate-800">Hozircha hech kim ro'yxatdan o'tmagan. Chap tarafdagi forma orqali birinchi bo'lib ro'yxatdan o'ting!</div>`;
+                return;
+            }
+
+            data.forEach(p => {
+                let badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+                let dirText = p.direction ? p.direction.toLowerCase() : '';
+
+                if (dirText.includes('dasturiy injiniring')) {
+                    badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+                } else if (dirText.includes('axbarot xavsizligi')) {
+                    badgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                } else if (dirText.includes('suniy intelekt')) {
+                    badgeColor = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+                }
+
+                const cardHtml = `
+                    <div class="glass-card rounded-2xl p-5 shadow-xl flex flex-col justify-between border border-slate-700/60">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeColor}">
+                                    ${p.direction}
+                                </span>
+                                <span class="text-xs text-slate-400 font-mono">${p.time}</span>
+                            </div>
+
+                            <h3 class="text-lg font-bold text-white mb-1">
+                                ${p.fullname}
+                            </h3>
+                            <p class="text-xs font-medium text-emerald-400 mb-3">
+                                🎓 Guruh: ${p.group}
+                            </p>
+
+                            <div class="bg-slate-900/60 rounded-xl p-2.5 border border-slate-700/40 mb-3">
+                                <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">Mavzu:</p>
+                                <p class="text-xs text-slate-200 font-medium italic">"${p.topic}"</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-700/60 flex justify-between items-center text-[11px] text-slate-400">
+                            <span>✉️ ${p.email}</span>
+                            <span>📞 ${p.phone}</span>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHtml;
+            });
+        }
+    </script>
+</body>
+</html>
