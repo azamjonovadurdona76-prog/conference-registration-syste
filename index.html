@@ -89,8 +89,8 @@
     </main>
 
     <script>
-        // O'ZINGIZNING APPS SCRIPT WEB APP URL HAVOLANGIZNI SHU YERGA QO'YING:
-        const API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+        // Siz bergan Google Apps Script Web App havolasi avtomatik ulandi:
+        const API_URL = "https://script.google.com/macros/s/AKfycbwCB3c6FXpeKfy_peMu9sc6-eLCbR7Sl0BMNkU4iNUTqOA1BubpYg2oXCFdDLFI4HWa/exec";
 
         window.onload = function() {
             loadParticipants();
@@ -115,7 +115,7 @@
 
             fetch(API_URL, {
                 method: "POST",
-                mode: "no-cors", // Google Apps Script CORS cheklovini aylanib o'tish uchun
+                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             })
@@ -124,7 +124,7 @@
                 btn.innerText = "Ro'yxatdan o'tish";
                 status.innerHTML = `<span class="text-emerald-400">Muvaffaqiyatli ro'yxatdan o'tdingiz!</span>`;
                 document.getElementById('regForm').reset();
-                setTimeout(loadParticipants, 1500); // 1.5 soniyadan so'ng ro'yxatni yangilash
+                setTimeout(loadParticipants, 1500);
             })
             .catch(err => {
                 btn.disabled = false;
@@ -139,7 +139,7 @@
                 .then(data => renderParticipants(data))
                 .catch(err => {
                     document.getElementById('participants-grid').innerHTML = 
-                        `<div class="col-span-full text-center py-12 text-red-400">Ma'lumotlarni yuklashda xatolik yuz berdi. API_URL to'g'riligini tekshiring.</div>`;
+                        `<div class="col-span-full text-center py-12 text-red-400">Ma'lumotlarni yuklashda xatolik yuz berdi.</div>`;
                 });
         }
 
